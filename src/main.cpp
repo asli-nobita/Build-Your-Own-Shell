@@ -1,6 +1,4 @@
-#include <iostream>
-#include <string>
-#include <sstream>
+#include "helper.h"
 
 int main() {
     // Flush after every std::cout / std:cerr
@@ -17,22 +15,22 @@ int main() {
             // std::cout << "Exiting...\n";  
             std::exit(0);
         }
-        // check if the first word is "echo" 
-        std::istringstream iss(input);
-        std::string first;
-        iss >> first;
-        if (first == "echo") {
-            std::string rest;
-            std::getline(iss, rest);
-            auto pos = rest.find_first_not_of(' ');
-            if (pos != std::string::npos) {
-                rest.erase(0, pos);
+        std::string command = get_command(input); 
+        std::string args = get_command_arguments(input); 
+        std::cout << "Command: " << command << std::endl;  
+        std::cout << "Args: " << args << std::endl; 
+        if(command == "type") { 
+            // command as argument should be single word
+            trim(args);
+            if(args.empty()) std::cout << ": command not found\n"; 
+            else if(args.find(' ') != std::string::npos) std::cout << args << ": command not found\n"; 
+            else { 
+                if(args == "type" || args == "echo" || args == "exit") std::cout << args << " is a shell builtin\n";
+                else std::cout << args << ": command not found\n"; 
             }
-            else {
-                rest.clear();
-            }
-            std::cout << rest << "\n";
-            continue;
+        } 
+        else if(command == "echo") { 
+            std::cout << args << "\n"; 
         }
         else std::cout << input << ": command not found\n";
     }
