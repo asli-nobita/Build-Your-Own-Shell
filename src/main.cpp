@@ -5,16 +5,16 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
-    std::string exit_msg = "exit 0";
+    // std::string exit_msg = "exit 0";
 
     while (1) {
         std::cout << "$ ";
         std::string input;
         std::getline(std::cin, input);
-        if (input == exit_msg) {
-            // std::cout << "Exiting...\n";  
-            std::exit(0);
-        }
+        // if (input == exit_msg) {
+        //     // std::cout << "Exiting...\n";  
+        //     std::exit(0);
+        // }
         std::string command = get_command(input); 
         std::string args = get_command_arguments(input); 
         // std::cout << "Command: " << command << std::endl;  
@@ -31,6 +31,9 @@ int main() {
         } 
         else if(command == "echo") { 
             std::cout << args << "\n"; 
+        } 
+        else if(command == "exit") { 
+            std::exit(0);
         }
         else std::cout << input << ": not found\n";
     }
