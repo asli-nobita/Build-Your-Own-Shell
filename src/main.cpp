@@ -22,16 +22,16 @@ int main() {
         if(command == "type") { 
             // command as argument should be single word
             trim(args);
-            if(args.empty()) std::cout << ": command not found\n"; 
-            else if(args.find(' ') != std::string::npos) std::cout << args << ": command not found\n"; 
+            if(args.empty()) std::cout << ": not found\n"; 
+            else if(args.find(' ') != std::string::npos) std::cout << args << ": not found\n"; 
             else { 
                 if(args == "type" || args == "echo" || args == "exit") std::cout << args << " is a shell builtin\n";
-                else std::cout << args << ": command not found\n"; 
+                else std::cout << args << ": not found\n"; 
             }
         } 
         else if(command == "echo") { 
             std::cout << args << "\n"; 
         }
-        else std::cout << input << ": command not found\n";
+        else std::cout << input << ": not found\n";
     }
 }
