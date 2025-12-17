@@ -17,8 +17,8 @@ int main() {
         }
         std::string command = get_command(input); 
         std::string args = get_command_arguments(input); 
-        std::cout << "Command: " << command << std::endl;  
-        std::cout << "Args: " << args << std::endl; 
+        // std::cout << "Command: " << command << std::endl;  
+        // std::cout << "Args: " << args << std::endl; 
         if(command == "type") { 
             // command as argument should be single word
             trim(args);
