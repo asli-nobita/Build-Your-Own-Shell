@@ -11,14 +11,10 @@ int main() {
         std::cout << "$ ";
         std::string input;
         std::getline(std::cin, input);
-        // if (input == exit_msg) {
-        //     // std::cout << "Exiting...\n";  
-        //     std::exit(0);
-        // }
+
         std::string command = get_command(input); 
         std::string args = get_command_arguments(input); 
-        // std::cout << "Command: " << command << std::endl;  
-        // std::cout << "Args: " << args << std::endl; 
+ 
         if(command == "type") { 
             // command as argument should be single word
             trim(args);
@@ -26,7 +22,13 @@ int main() {
             else if(args.find(' ') != std::string::npos) std::cout << args << ": not found\n"; 
             else { 
                 if(args == "type" || args == "echo" || args == "exit") std::cout << args << " is a shell builtin\n";
-                else std::cout << args << ": not found\n"; 
+                else {  
+                    const char* path_env = std::getenv("PATH"); 
+                    if(path_env != nullptr) {  
+                        std::string PATH(path_env); 
+                        search_in_path(PATH, args); 
+                    }
+                }
             }
         } 
         else if(command == "echo") { 

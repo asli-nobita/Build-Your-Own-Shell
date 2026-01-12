@@ -1,4 +1,10 @@
 #include "helper.h" 
+#ifdef _WIN32 
+constexpr char PATH_LIST_SEPARATOR=';'; 
+#else 
+constexpr char PATH_LIST_SEPARATOR=':'; 
+#endif
+
 
 std::string get_command(std::string input) { 
     std::istringstream iss(input);
@@ -39,4 +45,29 @@ void rtrim(std::string& s) {
 void trim(std::string& s) { 
     ltrim(s); 
     rtrim(s); 
+} 
+
+bool find_executable(const std::string& dir_name, const std::string& command) {  
+    // this concatenates the dir and the command name to get a full path 
+    std::filesystem::path full_path = std::filesystem::path(dir_name) / command; 
+    // we need to check if 1) this path exists and 2) a executable file is present at this path 
+    return std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path); 
+}   
+
+void search_in_path(const std::string& PATH, std::string& command) { 
+    std::vector<std::string> path_directories; 
+    std::istringstream iss(PATH);  
+    std::string dir; 
+    while(std::getline(iss, dir, PATH_LIST_SEPARATOR)) { 
+        path_directories.push_back(dir); 
+    } 
+
+    for(auto& dir_name : path_directories) { 
+        if(find_executable(dir_name, command)) { 
+            std::cout << command << " is " << dir_name << std::endl; 
+            return; 
+        }
+    } 
+    
+    std::cout << command << ": not found" << std::endl;
 }
