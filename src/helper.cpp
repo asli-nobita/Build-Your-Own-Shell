@@ -50,7 +50,7 @@ void trim(std::string& s) {
 bool find_executable(const std::string& dir_name, const std::string& command) {  
     // this concatenates the dir and the command name to get a full path 
     std::filesystem::path full_path = std::filesystem::path(dir_name) / command; 
-    // we need to check if 1) this path exists and 2) a executable file is present at this path 
+    // we need to check whether 1) this path exists and 2) a executable file is present at this path 
     return std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path); 
 }   
 

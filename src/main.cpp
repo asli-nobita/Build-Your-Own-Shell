@@ -26,6 +26,7 @@ int main() {
                     const char* path_env = std::getenv("PATH"); 
                     if(path_env != nullptr) {  
                         std::string PATH(path_env); 
+                        std::cout << "Debugging: $PATH=" << PATH << std::endl; 
                         search_in_path(PATH, args); 
                     }
                 }
