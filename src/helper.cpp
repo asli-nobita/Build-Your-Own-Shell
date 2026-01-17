@@ -47,32 +47,33 @@ void trim(std::string& s) {
     rtrim(s);
 }
 
-bool find_executable(std::filesystem::path &full_path) {
+bool find_executable(const std::string& full_path) {
     // we need to check whether 1) this path exists and 2) a executable file is present at this path 
     if (!std::filesystem::exists(full_path) || !std::filesystem::is_regular_file(full_path)) return false;
     // get file permissions as a bitmask
     auto perms = std::filesystem::status(full_path).permissions();
     return (perms & (std::filesystem::perms::owner_exec |
-                     std::filesystem::perms::group_exec |
-                     std::filesystem::perms::others_exec)) != std::filesystem::perms::none;
+        std::filesystem::perms::group_exec |
+        std::filesystem::perms::others_exec)) != std::filesystem::perms::none;
 }
 
-void search_in_path(const std::string& PATH, std::string& command) {
+const std::string& search_in_path(const std::string& PATH, std::string& command) {
     std::vector<std::string> path_directories;
     std::istringstream iss(PATH);
     std::string dir;
+    std::string full_path;
     while (std::getline(iss, dir, PATH_LIST_SEPARATOR)) {
         path_directories.push_back(dir);
     }
 
     for (auto& dir_name : path_directories) {
         // this concatenates the dir and the command name to get a full path 
-        std::filesystem::path full_path = std::filesystem::path(dir_name) / command;
+        full_path = (std::filesystem::path(dir_name) / command).string();
         if (find_executable(full_path)) {
-            std::cout << command << " is " << full_path.string() << std::endl;
-            return;
+            return full_path;
         }
     }
 
-    std::cout << command << ": not found" << std::endl;
+    return full_path;
 }
+
