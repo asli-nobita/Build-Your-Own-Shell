@@ -74,6 +74,6 @@ const std::string search_in_path(const std::string& PATH, std::string& command) 
         }
     }
 
-    return full_path;
+    return "";
 }
 
