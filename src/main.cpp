@@ -61,7 +61,14 @@ int main() {
                         for (auto& arg : parsed_args) parsed_args_ptrs.push_back(const_cast<char*>(arg.c_str()));
                         parsed_args_ptrs.push_back(nullptr);
 
-                        execv(exe_path.c_str(), parsed_args_ptrs.data());
+                        // Debugging 
+                        std::cout << exe_path << std::endl; 
+                        std::cout << parsed_args_ptrs[0] << std::endl; 
+
+                        execv(exe_path.c_str(), parsed_args_ptrs.data()); 
+
+                        std::cerr << "Execv failed: " << std::strerror(errno) << std::endl; 
+                        std::exit(1); 
                     }
                     else if (pid > 0) {
                         int status;
