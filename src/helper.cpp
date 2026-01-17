@@ -57,7 +57,7 @@ bool find_executable(const std::string& full_path) {
         std::filesystem::perms::others_exec)) != std::filesystem::perms::none;
 }
 
-const std::string& search_in_path(const std::string& PATH, std::string& command) {
+const std::string search_in_path(const std::string& PATH, std::string& command) {
     std::vector<std::string> path_directories;
     std::istringstream iss(PATH);
     std::string dir;

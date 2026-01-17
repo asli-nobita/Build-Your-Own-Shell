@@ -17,6 +17,6 @@
 std::string get_command(std::string input); 
 std::string get_command_arguments(std::string input); 
 void trim(std::string& s);  
-const std::string& search_in_path(const std::string& PATH, std::string& command); 
+const std::string search_in_path(const std::string& PATH, std::string& command); 
 
 #endif
