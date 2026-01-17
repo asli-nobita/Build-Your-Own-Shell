@@ -26,7 +26,6 @@ int main() {
                     const char* path_env = std::getenv("PATH");
                     if (path_env != nullptr) {
                         std::string PATH(path_env);
-                        // std::clog << "Debugging: $PATH=" << PATH << std::endl; 
                         auto exe_path = search_in_path(PATH, args);
                         if (exe_path.empty()) {
                             std::cout << command << ": not found" << std::endl;
@@ -57,7 +56,7 @@ int main() {
                         // parse arguments for the executable
                         std::vector<std::string> parsed_args;
                         std::string arg;
-                        std::istringstream iss(args);
+                        std::istringstream iss(input);
                         while (std::getline(iss, arg, ' ')) {
                             parsed_args.push_back(arg);
                         }
@@ -68,13 +67,13 @@ int main() {
                         parsed_args_ptrs.push_back(nullptr);
 
                         // Debugging 
-                        std::cout << exe_path << std::endl;
-                        std::cout << parsed_args_ptrs[0] << std::endl;
+                        // std::cout << exe_path << std::endl;
+                        // std::cout << parsed_args_ptrs[0] << std::endl;
 
                         execv(exe_path.c_str(), parsed_args_ptrs.data());
 
-                        std::cerr << "Execv failed: " << std::strerror(errno) << std::endl;
-                        std::exit(1);
+                        // std::cerr << "Execv failed: " << std::strerror(errno) << std::endl;
+                        // std::exit(1);
                     }
                     else if (pid > 0) {
                         int status;
