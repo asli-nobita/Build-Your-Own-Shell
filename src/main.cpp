@@ -28,10 +28,10 @@ int main() {
                         std::string PATH(path_env);
                         auto exe_path = search_in_path(PATH, args);
                         if (exe_path.empty()) {
-                            std::cout << command << ": not found" << std::endl;
+                            std::cout << args << ": not found" << std::endl;
                         } 
                         else { 
-                            std::cout << command << " is " << exe_path << std::endl; 
+                            std::cout << args << " is " << exe_path << std::endl; 
                         }
                     }
                 }
