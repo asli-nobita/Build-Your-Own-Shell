@@ -5,7 +5,7 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
-    // std::string exit_msg = "exit 0";
+    std::unordered_set<std::string> builtin_cmds{ "type","echo","exit","pwd" };
 
     while (1) {
         std::cout << "$ ";
@@ -21,7 +21,7 @@ int main() {
             if (args.empty()) std::cout << ": not found\n";
             else if (args.find(' ') != std::string::npos) std::cout << args << ": not found\n";
             else {
-                if (args == "type" || args == "echo" || args == "exit") std::cout << args << " is a shell builtin\n";
+                if (builtin_cmds.count(command)) std::cout << args << " is a shell builtin\n";
                 else {
                     const char* path_env = std::getenv("PATH");
                     if (path_env != nullptr) {
@@ -48,8 +48,8 @@ int main() {
                 std::filesystem::path current_dir = std::filesystem::current_path();
                 std::cout << current_dir.string() << std::endl;
             }
-            catch (const std::filesystem::filesystem_error& e) { 
-                std::cerr << e.what() << std::endl; 
+            catch (const std::filesystem::filesystem_error& e) {
+                std::cerr << e.what() << std::endl;
             }
         }
         else {
