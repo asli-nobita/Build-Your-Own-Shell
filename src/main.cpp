@@ -21,7 +21,7 @@ int main() {
             if (args.empty()) std::cout << ": not found\n";
             else if (args.find(' ') != std::string::npos) std::cout << args << ": not found\n";
             else {
-                if (builtin_cmds.count(command)) std::cout << args << " is a shell builtin\n";
+                if (builtin_cmds.count(args)) std::cout << args << " is a shell builtin\n";
                 else {
                     const char* path_env = std::getenv("PATH");
                     if (path_env != nullptr) {
