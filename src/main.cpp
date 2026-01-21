@@ -43,7 +43,7 @@ int main() {
         else if (command == "exit") {
             std::exit(0);
         }
-        if (command == "pwd") {
+        else if (command == "pwd") {
             try {
                 std::filesystem::path current_dir = std::filesystem::current_path();
                 std::cout << current_dir.string() << std::endl;
