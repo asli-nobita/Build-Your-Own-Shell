@@ -53,7 +53,7 @@ int main() {
             }
         }
         else if (command == "cd") {
-            const std::string& target_dir = args;
+            const std::string target_dir = args;
             if (target_dir == "~") {
                 target_dir = std::getenv("HOME");
             }
