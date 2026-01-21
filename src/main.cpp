@@ -52,13 +52,16 @@ int main() {
                 std::cerr << e.what() << std::endl;
             }
         }
-        else if(command == "cd") {  
-            const std::string& target_dir = args;  
-            if(std::filesystem::exists(target_dir)) { 
-                std::filesystem::current_path(target_dir); 
-            } 
-            else { 
-                std::cerr << command << ": " << target_dir << ": No such file or directory" << std::endl; 
+        else if (command == "cd") {
+            const std::string& target_dir = args;
+            if (target_dir == "~") {
+                target_dir = std::string(std::getenv("HOME"));
+            }
+            if (std::filesystem::exists(target_dir)) {
+                std::filesystem::current_path(target_dir);
+            }
+            else {
+                std::cerr << command << ": " << target_dir << ": No such file or directory" << std::endl;
             }
         }
         else {
