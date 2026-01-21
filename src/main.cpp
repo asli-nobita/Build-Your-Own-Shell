@@ -46,10 +46,10 @@ int main() {
         if (command == "pwd") {
             try {
                 std::filesystem::path current_dir = std::filesystem::current_path();
-                cout << current_dir.string() << endl;
+                std::cout << current_dir.string() << std::endl;
             }
             catch (const std::filesystem::filesystem_error& e) { 
-                cerr << e.what() << endl; 
+                std::cerr << e.what() << std::endl; 
             }
         }
         else {
