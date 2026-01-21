@@ -19,7 +19,7 @@ int main() {
             // command as argument should be single word
             trim(args);
             if (args.empty()) std::cout << ": not found\n";
-            else if (args.find(' ') != std::string::npos) std::cout << args << ": not found\n";
+            // else if (args.find(' ') != std::string::npos) std::cout << args << ": not found\n";
             else {
                 if (builtin_cmds.count(args)) std::cout << args << " is a shell builtin\n";
                 else {
@@ -52,7 +52,7 @@ int main() {
                 std::cerr << e.what() << std::endl;
             }
         }
-        else if(command == "cwd") {  
+        else if(command == "cd") {  
             const std::string& target_dir = args;  
             if(std::filesystem::exists(target_dir)) { 
                 std::filesystem::current_path(target_dir); 
