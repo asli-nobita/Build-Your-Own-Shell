@@ -29,9 +29,9 @@ int main() {
                         auto exe_path = search_in_path(PATH, args);
                         if (exe_path.empty()) {
                             std::cout << args << ": not found" << std::endl;
-                        } 
-                        else { 
-                            std::cout << args << " is " << exe_path << std::endl; 
+                        }
+                        else {
+                            std::cout << args << " is " << exe_path << std::endl;
                         }
                     }
                 }
@@ -42,6 +42,15 @@ int main() {
         }
         else if (command == "exit") {
             std::exit(0);
+        }
+        if (command == "pwd") {
+            try {
+                std::filesystem::path current_dir = std::filesystem::current_path();
+                cout << current_dir.string() << endl;
+            }
+            catch (const std::filesystem::filesystem_error& e) { 
+                cerr << e.what() << endl; 
+            }
         }
         else {
             // search for executable command in PATH 
