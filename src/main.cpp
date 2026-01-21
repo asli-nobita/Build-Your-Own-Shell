@@ -53,10 +53,8 @@ int main() {
             }
         }
         else if (command == "cd") {
-            const std::string target_dir = args;
-            if (target_dir == "~") {
-                target_dir = std::getenv("HOME");
-            }
+            const char* home_env = std::getenv("HOME"); 
+            const std::string target_dir = (args == "~") ? std::string(home_env) : args; 
             if (std::filesystem::exists(target_dir)) {
                 std::filesystem::current_path(target_dir);
             }
