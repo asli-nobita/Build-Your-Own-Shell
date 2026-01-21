@@ -5,7 +5,7 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
-    std::unordered_set<std::string> builtin_cmds{ "type","echo","exit","pwd" };
+    std::unordered_set<std::string> builtin_cmds{ "type","echo","exit","pwd","cd" };
 
     while (1) {
         std::cout << "$ ";
@@ -50,6 +50,15 @@ int main() {
             }
             catch (const std::filesystem::filesystem_error& e) {
                 std::cerr << e.what() << std::endl;
+            }
+        }
+        else if(command == "cwd") {  
+            const std::string& target_dir = args;  
+            if(std::filesystem::exists(target_dir)) { 
+                std::filesystem::current_path(target_dir); 
+            } 
+            else { 
+                std::cerr << command << ": " << target_dir << ": No such file or directory" << std::endl; 
             }
         }
         else {
