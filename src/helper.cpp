@@ -91,7 +91,7 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 if (c == '\"' && !to_escape) {
                     cur_state = State::IN_TEXT;
                 }
-                else if (c == '\\' && i < len - 1 && can_escape.count(rest[i + 1])) {
+                else if (c == '\\' && i < len - 1 && can_escape.count(rest[i + 1]) && !to_escape) {
                     // can only escape specific characters  
                     to_escape = true;
                 }
