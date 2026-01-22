@@ -41,7 +41,7 @@ int main() {
             else if (command == "echo") {
                 // concatenate all arguments and print to stdout 
                 for (auto& arg : args) {
-                    std::cout << arg;
+                    std::cout << arg << " ";
                 }
                 std::cout << std::endl;
             }
