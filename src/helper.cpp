@@ -25,12 +25,20 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
     for (char c : rest) {
         switch (cur_state) {
             case State::START:
-                if (std::isspace(c)) cur_state = State::START;
-                else if (c != '\'') {
-                    cur_state = State::IN_TEXT;
-                    cur_token += c;
+                if (std::isspace(c)) {
+                    if (!cur_token.empty()) {
+                        args.push_back(cur_token);
+                        cur_token.clear();
+                    }
+                    cur_state = State::START;
                 }
-                else cur_state = State::IN_QUOTES;
+                else {
+                    if (c != '\'') {
+                        cur_state = State::IN_TEXT;
+                        cur_token += c;
+                    }
+                    else cur_state = State::IN_QUOTES;
+                }
                 break;
             case State::IN_TEXT:
                 if (std::isspace(c)) {
@@ -40,7 +48,7 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 }
                 else {
                     if (c == '\'') {
-                        throw std::invalid_argument("Exception: Arguments must be separated by whitespace");
+                        cur_state = State::IN_QUOTES;
                     }
                     else {
                         cur_token += c;
