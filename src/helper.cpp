@@ -26,10 +26,10 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
         switch (cur_state) {
             case State::START:
                 if (std::isspace(c)) {
-                    if (!cur_token.empty()) {
-                        args.push_back(cur_token);
-                        cur_token.clear();
-                    }
+                    // if (!cur_token.empty()) {
+                    //     args.push_back(cur_token);
+                    //     cur_token.clear();
+                    // }
                     cur_state = State::START;
                 }
                 else {
@@ -58,17 +58,16 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 break;
             case State::IN_QUOTES:
                 if (c == '\'') {
-                    cur_state = State::START;
+                    cur_state = State::IN_TEXT;
                 }
                 else {
-                    // // can throw an error if this is the last character and no apotrophe was encountered 
-                    // if (c == rest.back()) {
-                    //     throw std::invalid_argument("Exception: Missing closing apostrophe in argument");
-                    // }
                     cur_token += c;
                     cur_state = State::IN_QUOTES;
                 }
         }
+    }
+    if (cur_state == State::IN_QUOTES) {
+        throw std::invalid_argument("Exception: Missing closing apostrophe in argument");
     }
     if (!cur_token.empty()) args.push_back(cur_token);
 
