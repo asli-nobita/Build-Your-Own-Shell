@@ -9,6 +9,7 @@ enum class State {
     START,
     IN_DOUBLE_QUOTES,
     IN_SINGLE_QUOTES,
+    ESCAPED,
     IN_TEXT
 };
 
@@ -40,6 +41,9 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     else if (c == '\"') {
                         cur_state = State::IN_DOUBLE_QUOTES;
                     }
+                    else if(c == '\\') { 
+                        cur_state = State::ESCAPED; 
+                    }
                     else {
                         cur_state = State::IN_TEXT;
                         cur_token += c;
@@ -58,6 +62,9 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     }
                     else if(c == '\"') { 
                         cur_state = State::IN_DOUBLE_QUOTES;
+                    }
+                    else if(c == '\\') { 
+                        cur_state = State::ESCAPED; 
                     }
                     else {
                         cur_token += c;
@@ -82,6 +89,10 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     cur_token += c;
                     cur_state = State::IN_DOUBLE_QUOTES;
                 }
+                break; 
+            case State::ESCAPED: 
+                cur_token += c; 
+                cur_state = State::IN_TEXT; 
         }
     }
     if (cur_state == State::IN_SINGLE_QUOTES || cur_state == State::IN_DOUBLE_QUOTES) {
