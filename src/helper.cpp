@@ -88,7 +88,7 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 }
                 break;
             case State::IN_DOUBLE_QUOTES:
-                if (c == '\"') {
+                if (c == '\"' && !to_escape) {
                     cur_state = State::IN_TEXT;
                 }
                 else if (c == '\\' && i < len - 1 && can_escape.count(rest[i + 1])) {
