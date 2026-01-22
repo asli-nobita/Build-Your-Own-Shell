@@ -5,7 +5,7 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
-    std::unordered_set<std::string> builtin_cmds{ "type","echo","exit","pwd","cd","cat" };
+    std::unordered_set<std::string> builtin_cmds{ "type","echo","exit","pwd","cd" };
 
     while (1) {
         std::cout << "$ ";
