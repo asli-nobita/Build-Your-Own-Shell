@@ -14,7 +14,11 @@ int main() {
         // trim(input);
 
         try {
-            auto [command, args] = parse_command(input);
+            auto parsed_cmd = parse_command(input);
+            auto command = parsed_cmd[0];
+            // a span is a view into a container, it does not create a copy. here we just need the array minus the first element as read only 
+            auto args = std::span<std::string>(parsed_cmd.begin() + 1, parsed_cmd.end());
+
             if (command == "type") {
                 // command as argument should be single word
                 if (args.empty()) std::cout << ": not found\n";
@@ -69,7 +73,7 @@ int main() {
                     std::filesystem::current_path(target_dir);
                 }
                 else {
-                    std::cerr << command << ": " << target_dir << ": No such file or directory" << std::endl;
+                    std::cout << command << ": " << target_dir << ": No such file or directory" << std::endl;
                 }
             }
             else {
@@ -86,7 +90,7 @@ int main() {
                             // .c_str() returns const pointers, so we need a cast
                             std::vector<char*> parsed_args_ptrs;
                             // first argument should be name of executable 
-                            parsed_args_ptrs.push_back(const_cast<char*>(command.c_str())); 
+                            parsed_args_ptrs.push_back(const_cast<char*>(command.c_str()));
                             for (auto& arg : args) parsed_args_ptrs.push_back(const_cast<char*>(arg.c_str()));
                             parsed_args_ptrs.push_back(nullptr);
 
@@ -103,7 +107,7 @@ int main() {
                     else {
                         std::cout << command << ": not found" << std::endl;
                     }
-                }    
+                }
             }
         }
         catch (std::invalid_argument& e) {

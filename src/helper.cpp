@@ -13,21 +13,20 @@ enum class State {
 };
 
 
-const std::pair<std::string, std::vector<std::string>> parse_command(std::string input) {
+
+const std::vector<std::string> parse_command(std::string input) {
     std::istringstream iss(input);
-    std::string first;
-    iss >> first;
-    std::string rest;
-    std::getline(iss, rest);
+    std::string cmd;
+    std::getline(iss, cmd);
     // start reading input 
-    std::vector<std::string> args;
+    std::vector<std::string> parsed_cmd;
     State cur_state = State::START;
     std::string cur_token;
-    auto len = rest.length();
+    auto len = cmd.length();
     std::unordered_set<char> can_escape{ '\"', '\\', '$', '`', '\n' };
     bool to_escape = false;
     for (unsigned int i = 0; i < len; i++) {
-        auto c = rest[i];
+        auto c = cmd[i];
         switch (cur_state) {
             case State::START:
                 if (std::isspace(c)) {
@@ -52,7 +51,7 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 break;
             case State::IN_TEXT:
                 if (std::isspace(c) && !to_escape) {
-                    args.push_back(cur_token);
+                    parsed_cmd.push_back(cur_token);
                     cur_token.clear();
                     cur_state = State::START;
                 }
@@ -87,7 +86,7 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 if (c == '\"' && !to_escape) {
                     cur_state = State::IN_TEXT;
                 }
-                else if (c == '\\' && i < len - 1 && can_escape.count(rest[i + 1]) && !to_escape) {
+                else if (c == '\\' && i < len - 1 && can_escape.count(cmd[i + 1]) && !to_escape) {
                     // can only escape specific characters  
                     to_escape = true;
                 }
@@ -102,9 +101,9 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
     if (cur_state == State::IN_SINGLE_QUOTES || cur_state == State::IN_DOUBLE_QUOTES) {
         throw std::invalid_argument("Exception: Missing closing quotes in argument");
     }
-    if (!cur_token.empty()) args.push_back(cur_token);
+    if (!cur_token.empty()) parsed_cmd.push_back(cur_token);
 
-    return { first, args };
+    return parsed_cmd;
 }
 
 // string processing functions
