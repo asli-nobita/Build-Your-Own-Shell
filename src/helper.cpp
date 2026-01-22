@@ -31,10 +31,6 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
         switch (cur_state) {
             case State::START:
                 if (std::isspace(c)) {
-                    // if (!cur_token.empty()) {
-                    //     args.push_back(cur_token);
-                    //     cur_token.clear();
-                    // }
                     cur_state = State::START;
                 }
                 else {
@@ -55,7 +51,7 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 }
                 break;
             case State::IN_TEXT:
-                if (std::isspace(c)) {
+                if (std::isspace(c) && !to_escape) {
                     args.push_back(cur_token);
                     cur_token.clear();
                     cur_state = State::START;
