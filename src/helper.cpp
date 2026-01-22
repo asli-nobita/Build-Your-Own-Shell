@@ -73,12 +73,14 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     cur_token += c;
                     cur_state = State::IN_SINGLE_QUOTES;
                 }
+                break; 
             case State::IN_DOUBLE_QUOTES:
                 if (c == '\"') {
                     cur_state = State::IN_TEXT;
                 }
                 else {
                     cur_token += c;
+                    cur_state = State::IN_DOUBLE_QUOTES;
                 }
         }
     }
