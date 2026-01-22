@@ -53,10 +53,10 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     cur_state = State::START;
                 }
                 else {
-                    // can throw an error if this is the last character and no apotrophe was encountered 
-                    if (c == rest.back()) {
-                        throw std::invalid_argument("Exception: Missing closing apostrophe in argument");
-                    }
+                    // // can throw an error if this is the last character and no apotrophe was encountered 
+                    // if (c == rest.back()) {
+                    //     throw std::invalid_argument("Exception: Missing closing apostrophe in argument");
+                    // }
                     cur_token += c;
                     cur_state = State::IN_QUOTES;
                 }
