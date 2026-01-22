@@ -56,6 +56,9 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     if (c == '\'') {
                         cur_state = State::IN_SINGLE_QUOTES;
                     }
+                    else if(c == '\"') { 
+                        cur_state = State::IN_DOUBLE_QUOTES;
+                    }
                     else {
                         cur_token += c;
                         cur_state = State::IN_TEXT;
