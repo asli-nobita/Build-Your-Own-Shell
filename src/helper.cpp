@@ -5,28 +5,66 @@ constexpr char PATH_LIST_SEPARATOR = ';';
 constexpr char PATH_LIST_SEPARATOR = ':';
 #endif
 
+enum class State {
+    START,
+    IN_QUOTES,
+    IN_TEXT
+};
 
-std::string get_command(std::string input) {
-    std::istringstream iss(input);
-    std::string first;
-    iss >> first;
-    return first;
-}
 
-std::string get_command_arguments(std::string input) {
+const std::pair<std::string, std::vector<std::string>> parse_command(std::string input) {
     std::istringstream iss(input);
     std::string first;
     iss >> first;
     std::string rest;
     std::getline(iss, rest);
-    auto pos = rest.find_first_not_of(' ');
-    if (pos != std::string::npos) {
-        rest.erase(0, pos);
+    // start reading input 
+    std::vector<std::string> args;
+    State cur_state = State::START;
+    std::string cur_token;
+    for (char c : rest) {
+        switch (cur_state) {
+            case State::START:
+                if (std::isspace(c)) cur_state = State::START;
+                else if (c != '\'') {
+                    cur_state = State::IN_TEXT;
+                    cur_token += c;
+                }
+                else cur_state = State::IN_QUOTES;
+                break;
+            case State::IN_TEXT:
+                if (std::isspace(c)) {
+                    args.push_back(cur_token);
+                    cur_token.clear();
+                    cur_state = State::START;
+                }
+                else {
+                    if (c == '\'') {
+                        throw std::invalid_argument("Exception: Arguments must be separated by whitespace");
+                    }
+                    else {
+                        cur_token += c;
+                        cur_state = State::IN_TEXT;
+                    }
+                }
+                break;
+            case State::IN_QUOTES:
+                if (c == '\'') {
+                    cur_state = State::START;
+                }
+                else {
+                    // can throw an error if this is the last character and no apotrophe was encountered 
+                    if (c == rest.back()) {
+                        throw std::invalid_argument("Exception: Missing closing apostrophe in argument");
+                    }
+                    cur_token += c;
+                    cur_state = State::IN_QUOTES;
+                }
+        }
     }
-    else {
-        rest.clear();
-    }
-    return rest;
+    if (!cur_token.empty()) args.push_back(cur_token);
+
+    return { first, args };
 }
 
 // string processing functions
