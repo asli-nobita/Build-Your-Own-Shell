@@ -11,7 +11,7 @@ int main() {
         std::cout << "$ ";
         std::string input;
         std::getline(std::cin, input);
-        trim(input);
+        // trim(input);
 
         try {
             auto [command, args] = parse_command(input);

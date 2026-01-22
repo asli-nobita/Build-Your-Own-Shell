@@ -7,7 +7,8 @@ constexpr char PATH_LIST_SEPARATOR = ':';
 
 enum class State {
     START,
-    IN_QUOTES,
+    IN_DOUBLE_QUOTES,
+    IN_SINGLE_QUOTES,
     IN_TEXT
 };
 
@@ -33,11 +34,16 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     cur_state = State::START;
                 }
                 else {
-                    if (c != '\'') {
+                    if (c == '\'') {
+                        cur_state = State::IN_SINGLE_QUOTES;
+                    }
+                    else if (c == '\"') {
+                        cur_state = State::IN_DOUBLE_QUOTES;
+                    }
+                    else {
                         cur_state = State::IN_TEXT;
                         cur_token += c;
                     }
-                    else cur_state = State::IN_QUOTES;
                 }
                 break;
             case State::IN_TEXT:
@@ -48,7 +54,7 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                 }
                 else {
                     if (c == '\'') {
-                        cur_state = State::IN_QUOTES;
+                        cur_state = State::IN_SINGLE_QUOTES;
                     }
                     else {
                         cur_token += c;
@@ -56,18 +62,25 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     }
                 }
                 break;
-            case State::IN_QUOTES:
+            case State::IN_SINGLE_QUOTES:
                 if (c == '\'') {
                     cur_state = State::IN_TEXT;
                 }
                 else {
                     cur_token += c;
-                    cur_state = State::IN_QUOTES;
+                    cur_state = State::IN_SINGLE_QUOTES;
+                }
+            case State::IN_DOUBLE_QUOTES:
+                if (c == '\"') {
+                    cur_state = State::IN_TEXT;
+                }
+                else {
+                    cur_token += c;
                 }
         }
     }
-    if (cur_state == State::IN_QUOTES) {
-        throw std::invalid_argument("Exception: Missing closing apostrophe in argument");
+    if (cur_state == State::IN_SINGLE_QUOTES || cur_state == State::IN_DOUBLE_QUOTES) {
+        throw std::invalid_argument("Exception: Missing closing quotes in argument");
     }
     if (!cur_token.empty()) args.push_back(cur_token);
 
