@@ -9,7 +9,6 @@ enum class State {
     START,
     IN_DOUBLE_QUOTES,
     IN_SINGLE_QUOTES,
-    ESCAPED,
     IN_TEXT
 };
 
@@ -24,7 +23,11 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
     std::vector<std::string> args;
     State cur_state = State::START;
     std::string cur_token;
-    for (char c : rest) {
+    auto len = rest.length();
+    std::unordered_set<char> can_escape{ '\"', '\\', '$', '`', '\n' };
+    bool to_escape = false;
+    for (unsigned int i = 0; i < len; i++) {
+        auto c = rest[i];
         switch (cur_state) {
             case State::START:
                 if (std::isspace(c)) {
@@ -35,16 +38,17 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     cur_state = State::START;
                 }
                 else {
-                    if (c == '\'') {
+                    if (c == '\'' && !to_escape) {
                         cur_state = State::IN_SINGLE_QUOTES;
                     }
-                    else if (c == '\"') {
+                    else if (c == '\"' && !to_escape) {
                         cur_state = State::IN_DOUBLE_QUOTES;
                     }
-                    else if(c == '\\') { 
-                        cur_state = State::ESCAPED; 
+                    else if (c == '\\' && !to_escape) {
+                        to_escape = true;
                     }
                     else {
+                        if (to_escape) to_escape = false;
                         cur_state = State::IN_TEXT;
                         cur_token += c;
                     }
@@ -57,42 +61,46 @@ const std::pair<std::string, std::vector<std::string>> parse_command(std::string
                     cur_state = State::START;
                 }
                 else {
-                    if (c == '\'') {
+                    if (c == '\'' && !to_escape) {
                         cur_state = State::IN_SINGLE_QUOTES;
                     }
-                    else if(c == '\"') { 
+                    else if (c == '\"' && !to_escape) {
                         cur_state = State::IN_DOUBLE_QUOTES;
                     }
-                    else if(c == '\\') { 
-                        cur_state = State::ESCAPED; 
+                    else if (c == '\\' && !to_escape) {
+                        to_escape = true;
                     }
                     else {
+                        if (to_escape) to_escape = false;
                         cur_token += c;
                         cur_state = State::IN_TEXT;
                     }
                 }
                 break;
             case State::IN_SINGLE_QUOTES:
-                if (c == '\'') {
+                if (c == '\'' && !to_escape) {
                     cur_state = State::IN_TEXT;
                 }
                 else {
+                    if (to_escape) to_escape = false;
                     cur_token += c;
                     cur_state = State::IN_SINGLE_QUOTES;
                 }
-                break; 
+                break;
             case State::IN_DOUBLE_QUOTES:
                 if (c == '\"') {
                     cur_state = State::IN_TEXT;
                 }
+                else if (c == '\\' && i < len - 1 && can_escape.count(rest[i + 1])) {
+                    // can only escape specific characters  
+                    to_escape = true;
+                }
                 else {
+                    if (to_escape) to_escape = false;
                     cur_token += c;
                     cur_state = State::IN_DOUBLE_QUOTES;
                 }
-                break; 
-            case State::ESCAPED: 
-                cur_token += c; 
-                cur_state = State::IN_TEXT; 
+                break;
         }
     }
     if (cur_state == State::IN_SINGLE_QUOTES || cur_state == State::IN_DOUBLE_QUOTES) {
