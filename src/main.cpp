@@ -82,17 +82,12 @@ int main() {
                         pid_t pid = fork();
                         if (pid == 0) {
                             // child process 
-                            // parse arguments for the executable
-                            std::vector<std::string> parsed_args;
-                            std::string arg;
-                            std::istringstream iss(input);
-                            while (std::getline(iss, arg, ' ')) {
-                                parsed_args.push_back(arg);
-                            }
                             // execv expects a argument list of char pointers 
                             // .c_str() returns const pointers, so we need a cast
                             std::vector<char*> parsed_args_ptrs;
-                            for (auto& arg : parsed_args) parsed_args_ptrs.push_back(const_cast<char*>(arg.c_str()));
+                            // first argument should be name of executable 
+                            parsed_args_ptrs.push_back(const_cast<char*>(command.c_str())); 
+                            for (auto& arg : args) parsed_args_ptrs.push_back(const_cast<char*>(arg.c_str()));
                             parsed_args_ptrs.push_back(nullptr);
 
                             execv(exe_path.c_str(), parsed_args_ptrs.data());
