@@ -17,6 +17,8 @@
 #include <stdexcept>
 #include <span>
 #include <fstream> 
+#include <fcntl.h>
+#include <unistd.h>
 
 const std::pair<std::vector<std::string>, bool> parse_command(const std::string& input);
 void trim(std::string& s);

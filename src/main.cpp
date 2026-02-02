@@ -108,6 +108,11 @@ int main() {
                         for (auto& arg : args) parsed_args_ptrs.push_back(const_cast<char*>(arg.c_str()));
                         parsed_args_ptrs.push_back(nullptr);
 
+                        if (is_redirect) {
+                            int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
+                            dup2(fd, STDOUT_FILENO);
+                            close(fd); 
+                        }
                         execv(exe_path.c_str(), parsed_args_ptrs.data());
                     }
                     else if (pid > 0) {
@@ -125,11 +130,10 @@ int main() {
 
             if (is_redirect) {
                 // open or create file in write mode and write output to file 
-                std::ofstream redirect_file(redirect_filename, std::ios::out);
-                if (redirect_file.is_open()) {
-                    redirect_file << output.str();
-                    redirect_file.close();
-                }
+                int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);  
+                auto buf = output.str().c_str(); 
+                write(fd, buf, sizeof(buf)); 
+                close(fd); 
             }
             else {
                 // write to stdout 
