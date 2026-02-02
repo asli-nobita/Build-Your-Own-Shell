@@ -29,7 +29,6 @@ int main() {
                 redirect_filename = parsed_cmd.back();
                 // std::cout << "Debugging: Parsed filename as " << redirect_filename << std::endl;
             }
-            auto arg_count = parsed_cmd.size();
             // a span is a view into a container, it does not create a copy. here we just need the array minus the first element as read only 
             auto args = std::span<std::string>(parsed_cmd.begin() + 1, (is_redirect ? parsed_cmd.end() - 1 : parsed_cmd.end()));
             // std::cout << "Debugging: args size is " << args.size() << std::endl;
@@ -111,7 +110,7 @@ int main() {
                         if (is_redirect) {
                             int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
                             dup2(fd, STDOUT_FILENO);
-                            close(fd); 
+                            close(fd);
                         }
                         execv(exe_path.c_str(), parsed_args_ptrs.data());
                     }
@@ -128,16 +127,24 @@ int main() {
                 }
             }
 
-            if (is_redirect) {
-                // open or create file in write mode and write output to file 
-                int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);  
-                auto buf = output.str().c_str(); 
-                write(fd, buf, sizeof(buf)); 
-                close(fd); 
-            }
-            else {
-                // write to stdout 
-                std::cout << output.str();
+            if (!output.str().empty()) {
+                if (is_redirect) {
+                    // open or create file in write mode and write output to file 
+                    int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
+                    std::string buf = output.str();
+                    size_t NBYTES = buf.length();
+                    auto bytes = write(fd, buf.c_str(), NBYTES);
+                    if (bytes == -1) {
+                        std::cerr << "Error writing to file\n";
+                        continue;
+                    }
+                    // std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
+                    close(fd);
+                }
+                else {
+                    // write to stdout 
+                    std::cout << output.str();
+                }
             }
         }
         catch (std::invalid_argument& e) {
