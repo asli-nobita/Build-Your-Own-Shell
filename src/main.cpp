@@ -27,10 +27,12 @@ int main() {
             std::string redirect_filename;
             if (is_redirect) {
                 redirect_filename = parsed_cmd.back();
+                // std::cout << "Debugging: Parsed filename as " << redirect_filename << std::endl;
             }
             auto arg_count = parsed_cmd.size();
             // a span is a view into a container, it does not create a copy. here we just need the array minus the first element as read only 
-            auto args = std::span<std::string>(parsed_cmd.begin() + 1, (is_redirect ? parsed_cmd.begin() + arg_count - 2 : parsed_cmd.end()));
+            auto args = std::span<std::string>(parsed_cmd.begin() + 1, (is_redirect ? parsed_cmd.end() - 1 : parsed_cmd.end()));
+            // std::cout << "Debugging: args size is " << args.size() << std::endl;
 
             std::ostringstream output;
 
@@ -51,7 +53,7 @@ int main() {
                                 std::cerr << argv << ": not found" << std::endl;
                             }
                             else {
-                                output << argv << " is " << exe_path << std::endl;
+                                output << argv << " is " << exe_path << "\n";
                             }
                         }
                     }
@@ -62,7 +64,7 @@ int main() {
                 for (auto& arg : args) {
                     output << arg << " ";
                 }
-                output << std::endl;
+                output << "\n";
             }
             else if (command == "exit") {
                 std::exit(0);
@@ -70,7 +72,7 @@ int main() {
             else if (command == "pwd") {
                 try {
                     std::filesystem::path current_dir = std::filesystem::current_path();
-                    output << current_dir.string() << std::endl;
+                    output << current_dir.string() << "\n";
                 }
                 catch (const std::filesystem::filesystem_error& e) {
                     std::cerr << e.what() << std::endl;
