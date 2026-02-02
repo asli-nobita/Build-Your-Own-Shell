@@ -16,9 +16,10 @@
 #include <cerrno>
 #include <stdexcept>
 #include <span>
+#include <fstream> 
 
-const std::vector<std::string> parse_command(std::string input); 
-void trim(std::string& s);  
-const std::string search_in_path(const std::string& PATH, std::string& command); 
+const std::pair<std::vector<std::string>, bool> parse_command(const std::string& input);
+void trim(std::string& s);
+const std::string search_in_path(const std::string& PATH, const std::string& command);
 
 #endif

@@ -5,62 +5,78 @@ constexpr char PATH_LIST_SEPARATOR = ';';
 constexpr char PATH_LIST_SEPARATOR = ':';
 #endif
 
-enum class State {
+namespace commands {
+    inline constexpr std::string_view redirect_output = ">";
+    inline constexpr std::string_view redirect_std_output = "1>";
+};
+
+enum class command_states {
     START,
     IN_DOUBLE_QUOTES,
     IN_SINGLE_QUOTES,
-    IN_TEXT
+    IN_TEXT,
 };
 
+enum class input_states {
+    IN_COMMAND,
+    IN_FILENAME
+};
 
-
-const std::vector<std::string> parse_command(std::string input) {
+const std::pair<std::vector<std::string>, bool> parse_command(const std::string& input) {
     std::istringstream iss(input);
     std::string cmd;
     std::getline(iss, cmd);
     // start reading input 
     std::vector<std::string> parsed_cmd;
-    State cur_state = State::START;
+    command_states cur_state = command_states::START;
     std::string cur_token;
     auto len = cmd.length();
     std::unordered_set<char> can_escape{ '\"', '\\', '$', '`', '\n' };
     bool to_escape = false;
+    bool is_redirect = false;
+    // std::string redirect_filename;
     for (unsigned int i = 0; i < len; i++) {
         auto c = cmd[i];
         switch (cur_state) {
-            case State::START:
+            case command_states::START:
                 if (std::isspace(c)) {
-                    cur_state = State::START;
+                    cur_state = command_states::START;
                 }
                 else {
                     if (c == '\'' && !to_escape) {
-                        cur_state = State::IN_SINGLE_QUOTES;
+                        cur_state = command_states::IN_SINGLE_QUOTES;
                     }
                     else if (c == '\"' && !to_escape) {
-                        cur_state = State::IN_DOUBLE_QUOTES;
+                        cur_state = command_states::IN_DOUBLE_QUOTES;
                     }
                     else if (c == '\\' && !to_escape) {
                         to_escape = true;
                     }
                     else {
                         if (to_escape) to_escape = false;
-                        cur_state = State::IN_TEXT;
+                        cur_state = command_states::IN_TEXT;
                         cur_token += c;
                     }
                 }
                 break;
-            case State::IN_TEXT:
+            case command_states::IN_TEXT:
                 if (std::isspace(c) && !to_escape) {
+                    if (cur_token == commands::redirect_output || cur_token == commands::redirect_std_output) {
+                        is_redirect = true;
+                        cur_state = command_states::IN_TEXT;
+                        cur_token.clear();
+                        continue;
+                    }
                     parsed_cmd.push_back(cur_token);
                     cur_token.clear();
-                    cur_state = State::START;
+                    cur_state = command_states::START;
                 }
                 else {
                     if (c == '\'' && !to_escape) {
-                        cur_state = State::IN_SINGLE_QUOTES;
+                        cur_state = command_states::IN_SINGLE_QUOTES;
                     }
                     else if (c == '\"' && !to_escape) {
-                        cur_state = State::IN_DOUBLE_QUOTES;
+                        cur_state = command_states::IN_DOUBLE_QUOTES;
                     }
                     else if (c == '\\' && !to_escape) {
                         to_escape = true;
@@ -68,23 +84,23 @@ const std::vector<std::string> parse_command(std::string input) {
                     else {
                         if (to_escape) to_escape = false;
                         cur_token += c;
-                        cur_state = State::IN_TEXT;
+                        cur_state = command_states::IN_TEXT;
                     }
                 }
                 break;
-            case State::IN_SINGLE_QUOTES:
+            case command_states::IN_SINGLE_QUOTES:
                 if (c == '\'' && !to_escape) {
-                    cur_state = State::IN_TEXT;
+                    cur_state = command_states::IN_TEXT;
                 }
                 else {
                     if (to_escape) to_escape = false;
                     cur_token += c;
-                    cur_state = State::IN_SINGLE_QUOTES;
+                    cur_state = command_states::IN_SINGLE_QUOTES;
                 }
                 break;
-            case State::IN_DOUBLE_QUOTES:
+            case command_states::IN_DOUBLE_QUOTES:
                 if (c == '\"' && !to_escape) {
-                    cur_state = State::IN_TEXT;
+                    cur_state = command_states::IN_TEXT;
                 }
                 else if (c == '\\' && i < len - 1 && can_escape.count(cmd[i + 1]) && !to_escape) {
                     // can only escape specific characters  
@@ -93,18 +109,19 @@ const std::vector<std::string> parse_command(std::string input) {
                 else {
                     if (to_escape) to_escape = false;
                     cur_token += c;
-                    cur_state = State::IN_DOUBLE_QUOTES;
+                    cur_state = command_states::IN_DOUBLE_QUOTES;
                 }
                 break;
         }
     }
-    if (cur_state == State::IN_SINGLE_QUOTES || cur_state == State::IN_DOUBLE_QUOTES) {
+    if (cur_state == command_states::IN_SINGLE_QUOTES || cur_state == command_states::IN_DOUBLE_QUOTES) {
         throw std::invalid_argument("Exception: Missing closing quotes in argument");
     }
     if (!cur_token.empty()) parsed_cmd.push_back(cur_token);
 
-    return parsed_cmd;
+    return {parsed_cmd, is_redirect};
 }
+
 
 // string processing functions
 void ltrim(std::string& s) {
@@ -134,7 +151,7 @@ bool find_executable(const std::string& full_path) {
         std::filesystem::perms::others_exec)) != std::filesystem::perms::none;
 }
 
-const std::string search_in_path(const std::string& PATH, std::string& command) {
+const std::string search_in_path(const std::string& PATH, const std::string& command) {
     std::vector<std::string> path_directories;
     std::istringstream iss(PATH);
     std::string dir;
