@@ -1,40 +1,19 @@
 #include "helper.h" 
-#ifdef _WIN32 
-constexpr char PATH_LIST_SEPARATOR = ';';
-#else 
-constexpr char PATH_LIST_SEPARATOR = ':';
-#endif
 
-namespace commands {
-    inline constexpr std::string_view redirect_output = ">";
-    inline constexpr std::string_view redirect_std_output = "1>";
-};
-
-enum class command_states {
-    START,
-    IN_DOUBLE_QUOTES,
-    IN_SINGLE_QUOTES,
-    IN_TEXT,
-};
-
-enum class input_states {
-    IN_COMMAND,
-    IN_FILENAME
-};
-
-const std::pair<std::vector<std::string>, bool> parse_command(const std::string& input) {
+const std::pair<std::vector<std::string>, redirect_states> parse_command(const std::string& input) {
     std::istringstream iss(input);
     std::string cmd;
     std::getline(iss, cmd);
+
     // start reading input 
     std::vector<std::string> parsed_cmd;
     command_states cur_state = command_states::START;
     std::string cur_token;
-    auto len = cmd.length();
     std::unordered_set<char> can_escape{ '\"', '\\', '$', '`', '\n' };
-    bool to_escape = false;
-    bool is_redirect = false;
-    // std::string redirect_filename;
+    auto len = cmd.length();
+    auto to_escape = false;
+    auto is_redirect = redirect_states::NO_REDIRECT;
+
     for (unsigned int i = 0; i < len; i++) {
         auto c = cmd[i];
         switch (cur_state) {
@@ -62,7 +41,13 @@ const std::pair<std::vector<std::string>, bool> parse_command(const std::string&
             case command_states::IN_TEXT:
                 if (std::isspace(c) && !to_escape) {
                     if (cur_token == commands::redirect_output || cur_token == commands::redirect_std_output) {
-                        is_redirect = true;
+                        is_redirect = redirect_states::REDIRECT_OUTPUT;
+                        cur_state = command_states::IN_TEXT;
+                        cur_token.clear();
+                        continue;
+                    }
+                    if (cur_token == commands::redirect_error) {
+                        is_redirect = redirect_states::REDIRECT_ERROR;
                         cur_state = command_states::IN_TEXT;
                         cur_token.clear();
                         continue;
@@ -119,7 +104,28 @@ const std::pair<std::vector<std::string>, bool> parse_command(const std::string&
     }
     if (!cur_token.empty()) parsed_cmd.push_back(cur_token);
 
-    return {parsed_cmd, is_redirect};
+    return { parsed_cmd, is_redirect };
+}
+
+void handle_redirect(const std::string& filename, redirect_states is_redirect, std::ostringstream& output) {
+    // open or create file in write mode and write output to file 
+    int fd = open(filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
+    std::string buf = output.str();
+    size_t NBYTES = buf.length();
+    if (is_redirect != redirect_states::NO_REDIRECT) {
+        if (NBYTES > 0) {
+            auto bytes = write(fd, buf.c_str(), NBYTES);
+            if (bytes == -1) {
+                std::cerr << "Error writing to file\n";
+                return;
+            }
+            std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
+        }
+    }
+    else { 
+        std::cout << buf << std::endl; 
+    }
+    close(fd);
 }
 
 

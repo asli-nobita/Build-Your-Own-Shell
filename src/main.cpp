@@ -9,7 +9,7 @@ int main() {
 
     const char* path_env = std::getenv("PATH");
     if (path_env == nullptr) {
-        std::cerr << "Path environment variable does not exist" << std::endl;
+        std::cerr << "Path environment variable does not exist" << "\n";
         exit(1);
     }
     std::string PATH(path_env);
@@ -24,46 +24,45 @@ int main() {
         try {
             auto [parsed_cmd, is_redirect] = parse_command(input);
             auto command = parsed_cmd[0];
+
+            std::cout << "Debugging: is_redirect value is " << static_cast<int>(is_redirect) << "\n";
             std::string redirect_filename;
-            if (is_redirect) {
+            if (is_redirect != redirect_states::NO_REDIRECT) {
                 redirect_filename = parsed_cmd.back();
-                // std::cout << "Debugging: Parsed filename as " << redirect_filename << std::endl;
             }
             // a span is a view into a container, it does not create a copy. here we just need the array minus the first element as read only 
-            auto args = std::span<std::string>(parsed_cmd.begin() + 1, (is_redirect ? parsed_cmd.end() - 1 : parsed_cmd.end()));
-            // std::cout << "Debugging: args size is " << args.size() << std::endl;
+            auto args = std::span<std::string>(parsed_cmd.begin() + 1, (is_redirect != redirect_states::NO_REDIRECT ? parsed_cmd.end() - 1 : parsed_cmd.end()));
 
-            std::ostringstream output;
+            std::ostringstream out_stream;
 
             if (command == "type") {
                 // command as argument should be single word
-                if (args.empty()) std::cerr << ": not found\n";
-                else if (args.size() > 1) std::cout << "Invalid argument" << std::endl;
-                // else if (args.find(' ') != std::string::npos) std::cout << args << ": not found\n";
+                if (args.empty()) out_stream << ": not found\n";
+                else if (args.size() > 1) std::cout << "Invalid argument" << "\n";
                 else {
                     auto argv = args[0];
-                    if (builtin_cmds.count(argv)) output << argv << " is a shell builtin\n";
+                    if (builtin_cmds.count(argv)) out_stream << argv << " is a shell builtin\n";
                     else {
                         const char* path_env = std::getenv("PATH");
                         if (path_env != nullptr) {
                             std::string PATH(path_env);
                             auto exe_path = search_in_path(PATH, argv);
                             if (exe_path.empty()) {
-                                std::cerr << argv << ": not found" << std::endl;
+                                out_stream << argv << ": not found" << "\n";
                             }
                             else {
-                                output << argv << " is " << exe_path << "\n";
+                                out_stream << argv << " is " << exe_path << "\n";
                             }
                         }
                     }
                 }
             }
             else if (command == "echo") {
-                // concatenate all arguments and print to output stream
+                // concatenate all arguments and print to out_stream stream
                 for (auto& arg : args) {
-                    output << arg << " ";
+                    out_stream << arg << " ";
                 }
-                output << "\n";
+                out_stream << "\n";
             }
             else if (command == "exit") {
                 std::exit(0);
@@ -71,15 +70,15 @@ int main() {
             else if (command == "pwd") {
                 try {
                     std::filesystem::path current_dir = std::filesystem::current_path();
-                    output << current_dir.string() << "\n";
+                    out_stream << current_dir.string() << "\n";
                 }
                 catch (const std::filesystem::filesystem_error& e) {
-                    std::cerr << e.what() << std::endl;
+                    out_stream << e.what() << "\n";
                 }
             }
             else if (command == "cd") {
                 if (args.size() > 1) {
-                    std::cerr << "Invalid argument" << std::endl;
+                    out_stream << "Invalid argument" << "\n";
                     std::exit(1);
                 }
                 auto argv = args[0];
@@ -89,7 +88,7 @@ int main() {
                     std::filesystem::current_path(target_dir);
                 }
                 else {
-                    std::cerr << command << ": " << target_dir << ": No such file or directory" << std::endl;
+                    out_stream << command << ": " << target_dir << ": No such file or directory" << "\n";
                 }
             }
             else {
@@ -107,11 +106,14 @@ int main() {
                         for (auto& arg : args) parsed_args_ptrs.push_back(const_cast<char*>(arg.c_str()));
                         parsed_args_ptrs.push_back(nullptr);
 
-                        if (is_redirect) {
-                            int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
+                        int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
+                        if (is_redirect == redirect_states::REDIRECT_OUTPUT) {
                             dup2(fd, STDOUT_FILENO);
-                            close(fd);
                         }
+                        else if(is_redirect == redirect_states::REDIRECT_ERROR) {
+                            dup2(fd, STDERR_FILENO);
+                        }
+                        close(fd);
                         execv(exe_path.c_str(), parsed_args_ptrs.data());
                     }
                     else if (pid > 0) {
@@ -119,39 +121,19 @@ int main() {
                         waitpid(pid, &status, 0);
                     }
                     else {
-                        std::cerr << "Fork failed: " << std::strerror(errno) << std::endl;
+                        out_stream << "Fork failed: " << std::strerror(errno) << "\n";
                     }
                 }
                 else {
-                    std::cerr << command << ": not found" << std::endl;
+                    out_stream << command << ": not found" << "\n";
                 }
             }
 
-            if (!output.str().empty()) {
-                if (is_redirect) {
-                    // open or create file in write mode and write output to file 
-                    int fd = open(redirect_filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
-                    std::string buf = output.str();
-                    size_t NBYTES = buf.length();
-                    auto bytes = write(fd, buf.c_str(), NBYTES);
-                    if (bytes == -1) {
-                        std::cerr << "Error writing to file\n";
-                        continue;
-                    }
-                    // std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
-                    close(fd);
-                }
-                else {
-                    // write to stdout 
-                    std::cout << output.str();
-                }
-            }
+            if (out_stream.str().length() > 0) handle_redirect(redirect_filename, is_redirect, out_stream);
         }
         catch (std::invalid_argument& e) {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << "\n";
             continue;
         }
-
-
     }
 }
