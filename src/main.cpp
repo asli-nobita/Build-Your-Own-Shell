@@ -25,7 +25,6 @@ int main() {
             auto [parsed_cmd, is_redirect] = parse_command(input);
             auto command = parsed_cmd[0];
 
-            std::cout << "Debugging: is_redirect value is " << static_cast<int>(is_redirect) << "\n";
             std::string redirect_filename;
             if (is_redirect != redirect_states::NO_REDIRECT) {
                 redirect_filename = parsed_cmd.back();

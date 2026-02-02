@@ -119,7 +119,7 @@ void handle_redirect(const std::string& filename, redirect_states is_redirect, s
                 std::cerr << "Error writing to file\n";
                 return;
             }
-            std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
+            // std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
         }
     }
     else { 
