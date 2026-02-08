@@ -123,7 +123,7 @@ void handle_redirect(const std::string& filename, bool to_redirect, std::ostring
         }
     }
     else { 
-        std::cout << buf << std::endl; 
+        std::cout << buf; 
     }
     close(fd);
 }

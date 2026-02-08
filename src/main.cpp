@@ -61,6 +61,7 @@ int main() {
                 for (auto& arg : args) {
                     out_stream << arg << " ";
                 }
+                out_stream << "\n";
             }
             else if (command == "exit") {
                 std::exit(0);
