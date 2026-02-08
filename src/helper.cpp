@@ -107,12 +107,12 @@ const std::pair<std::vector<std::string>, redirect_states> parse_command(const s
     return { parsed_cmd, is_redirect };
 }
 
-void handle_redirect(const std::string& filename, redirect_states is_redirect, std::ostringstream& output) {
+void handle_redirect(const std::string& filename, bool to_redirect, std::ostringstream& output) {
     // open or create file in write mode and write output to file 
     int fd = open(filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
     std::string buf = output.str();
     size_t NBYTES = buf.length();
-    if (is_redirect != redirect_states::NO_REDIRECT) {
+    if (to_redirect) {
         if (NBYTES > 0) {
             auto bytes = write(fd, buf.c_str(), NBYTES);
             if (bytes == -1) {

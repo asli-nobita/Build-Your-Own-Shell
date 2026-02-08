@@ -32,11 +32,11 @@ int main() {
             // a span is a view into a container, it does not create a copy. here we just need the array minus the first element as read only 
             auto args = std::span<std::string>(parsed_cmd.begin() + 1, (is_redirect != redirect_states::NO_REDIRECT ? parsed_cmd.end() - 1 : parsed_cmd.end()));
 
-            std::ostringstream out_stream;
+            std::ostringstream out_stream, error_stream;
 
             if (command == "type") {
                 // command as argument should be single word
-                if (args.empty()) out_stream << ": not found\n";
+                if (args.empty()) error_stream << ": not found\n";
                 else if (args.size() > 1) std::cout << "Invalid argument" << "\n";
                 else {
                     auto argv = args[0];
@@ -47,7 +47,7 @@ int main() {
                             std::string PATH(path_env);
                             auto exe_path = search_in_path(PATH, argv);
                             if (exe_path.empty()) {
-                                out_stream << argv << ": not found" << "\n";
+                                error_stream << argv << ": not found" << "\n";
                             }
                             else {
                                 out_stream << argv << " is " << exe_path << "\n";
@@ -57,11 +57,10 @@ int main() {
                 }
             }
             else if (command == "echo") {
-                // concatenate all arguments and print to out_stream stream
+                // concatenate all arguments and print to out_stream 
                 for (auto& arg : args) {
                     out_stream << arg << " ";
                 }
-                out_stream << "\n";
             }
             else if (command == "exit") {
                 std::exit(0);
@@ -72,12 +71,12 @@ int main() {
                     out_stream << current_dir.string() << "\n";
                 }
                 catch (const std::filesystem::filesystem_error& e) {
-                    out_stream << e.what() << "\n";
+                    error_stream << e.what() << "\n";
                 }
             }
             else if (command == "cd") {
                 if (args.size() > 1) {
-                    out_stream << "Invalid argument" << "\n";
+                    error_stream << "Invalid argument" << "\n";
                     std::exit(1);
                 }
                 auto argv = args[0];
@@ -87,7 +86,7 @@ int main() {
                     std::filesystem::current_path(target_dir);
                 }
                 else {
-                    out_stream << command << ": " << target_dir << ": No such file or directory" << "\n";
+                    error_stream << command << ": " << target_dir << ": No such file or directory" << "\n";
                 }
             }
             else {
@@ -109,7 +108,7 @@ int main() {
                         if (is_redirect == redirect_states::REDIRECT_OUTPUT) {
                             dup2(fd, STDOUT_FILENO);
                         }
-                        else if(is_redirect == redirect_states::REDIRECT_ERROR) {
+                        else if (is_redirect == redirect_states::REDIRECT_ERROR) {
                             dup2(fd, STDERR_FILENO);
                         }
                         close(fd);
@@ -120,15 +119,16 @@ int main() {
                         waitpid(pid, &status, 0);
                     }
                     else {
-                        out_stream << "Fork failed: " << std::strerror(errno) << "\n";
+                        error_stream << "Fork failed: " << std::strerror(errno) << "\n";
                     }
                 }
                 else {
-                    out_stream << command << ": not found" << "\n";
+                    error_stream << command << ": not found" << "\n";
                 }
             }
 
-            if (out_stream.str().length() > 0) handle_redirect(redirect_filename, is_redirect, out_stream);
+            if (error_stream.str().length() > 0) handle_redirect(redirect_filename, is_redirect == redirect_states::REDIRECT_ERROR, error_stream);
+            else if (out_stream.str().length() > 0) handle_redirect(redirect_filename, is_redirect == redirect_states::REDIRECT_OUTPUT, out_stream);
         }
         catch (std::invalid_argument& e) {
             std::cerr << e.what() << "\n";

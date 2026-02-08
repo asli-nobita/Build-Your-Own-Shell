@@ -53,6 +53,6 @@ enum class redirect_states {
 const std::pair<std::vector<std::string>, redirect_states> parse_command(const std::string& input);
 void trim(std::string& s);
 const std::string search_in_path(const std::string& PATH, const std::string& command);
-void handle_redirect(const std::string& filename, redirect_states is_redirect, std::ostringstream& output); 
+void handle_redirect(const std::string& filename, bool to_redirect, std::ostringstream& output); 
 
 #endif
