@@ -47,8 +47,14 @@ Command parse_command(const std::string& input) {
                         cur_token.clear();
                         continue;
                     }
-                    else if (cur_token == commands::append_output) {
+                    else if (cur_token == commands::append_output || cur_token == commands::append_std_output) {
                         cmd.rd_mode = redirect_mode::APPEND_OUTPUT;
+                        cur_state = command_states::IN_TEXT;
+                        cur_token.clear();
+                        continue;
+                    }
+                    else if (cur_token == commands::append_error) {
+                        cmd.rd_mode = redirect_mode::APPEND_ERROR;
                         cur_state = command_states::IN_TEXT;
                         cur_token.clear();
                         continue;
@@ -131,6 +137,10 @@ void setup_fd(const Command& cmd) {
         fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
         dup2(fd, STDERR_FILENO);
     }
+    else if (cmd.rd_mode == redirect_mode::APPEND_ERROR) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
+        dup2(fd, STDERR_FILENO);
+    }
     else if (cmd.rd_mode == redirect_mode::REDIRECT_OUTPUT) {
         fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
         dup2(fd, STDOUT_FILENO);
@@ -158,6 +168,9 @@ void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std:
     if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR) {
         fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
     }
+    else if (cmd.rd_mode == redirect_mode::APPEND_ERROR) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
+    }
     else if (cmd.rd_mode == redirect_mode::REDIRECT_OUTPUT) {
         fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
     }
@@ -165,7 +178,7 @@ void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std:
         fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
     }
     std::string buf;
-    if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR) {
+    if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR || cmd.rd_mode == redirect_mode::APPEND_ERROR) {
         buf = error_stream.str();
     }
     else {
@@ -178,7 +191,7 @@ void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std:
             std::cerr << "Error writing to file\n";
             return;
         }
-        std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
+        // std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
     }
     close(fd);
 }

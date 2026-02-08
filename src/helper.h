@@ -31,6 +31,8 @@ namespace commands {
     inline constexpr std::string_view redirect_std_output = "1>";
     inline constexpr std::string_view redirect_error = "2>";
     inline constexpr std::string_view append_output = ">>";
+    inline constexpr std::string_view append_std_output = "1>>";
+    inline constexpr std::string_view append_error = "2>>"; 
 };
 
 enum class command_states {
@@ -49,7 +51,8 @@ enum class redirect_mode {
     NO_REDIRECT,
     REDIRECT_OUTPUT,
     APPEND_OUTPUT,
-    REDIRECT_ERROR
+    REDIRECT_ERROR, 
+    APPEND_ERROR
 };
 
 struct Command {
