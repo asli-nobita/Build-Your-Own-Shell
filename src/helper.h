@@ -30,6 +30,7 @@ namespace commands {
     inline constexpr std::string_view redirect_output = ">";
     inline constexpr std::string_view redirect_std_output = "1>";
     inline constexpr std::string_view redirect_error = "2>";
+    inline constexpr std::string_view append_output = ">>";
 };
 
 enum class command_states {
@@ -44,15 +45,24 @@ enum class input_states {
     IN_FILENAME
 };
 
-enum class redirect_states {
+enum class redirect_mode {
     NO_REDIRECT,
     REDIRECT_OUTPUT,
+    APPEND_OUTPUT,
     REDIRECT_ERROR
 };
 
-const std::pair<std::vector<std::string>, redirect_states> parse_command(const std::string& input);
+struct Command {
+    std::string command;
+    std::vector<std::string> args;
+    std::string redirect_filename;
+    redirect_mode rd_mode = redirect_mode::NO_REDIRECT;
+};
+
+Command parse_command(const std::string& input);
 void trim(std::string& s);
 const std::string search_in_path(const std::string& PATH, const std::string& command);
-void handle_redirect(const std::string& filename, bool to_redirect, std::ostringstream& output); 
+void setup_fd(const Command& cmd);
+void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std::ostringstream& error_stream);
 
 #endif

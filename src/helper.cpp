@@ -1,21 +1,22 @@
 #include "helper.h" 
 
-const std::pair<std::vector<std::string>, redirect_states> parse_command(const std::string& input) {
+Command parse_command(const std::string& input) {
     std::istringstream iss(input);
-    std::string cmd;
-    std::getline(iss, cmd);
+    std::string cmd_string;
+    std::getline(iss, cmd_string);
+
+    Command cmd;
 
     // start reading input 
     std::vector<std::string> parsed_cmd;
     command_states cur_state = command_states::START;
     std::string cur_token;
     std::unordered_set<char> can_escape{ '\"', '\\', '$', '`', '\n' };
-    auto len = cmd.length();
+    auto len = cmd_string.length();
     auto to_escape = false;
-    auto is_redirect = redirect_states::NO_REDIRECT;
 
     for (unsigned int i = 0; i < len; i++) {
-        auto c = cmd[i];
+        auto c = cmd_string[i];
         switch (cur_state) {
             case command_states::START:
                 if (std::isspace(c)) {
@@ -41,13 +42,19 @@ const std::pair<std::vector<std::string>, redirect_states> parse_command(const s
             case command_states::IN_TEXT:
                 if (std::isspace(c) && !to_escape) {
                     if (cur_token == commands::redirect_output || cur_token == commands::redirect_std_output) {
-                        is_redirect = redirect_states::REDIRECT_OUTPUT;
+                        cmd.rd_mode = redirect_mode::REDIRECT_OUTPUT;
                         cur_state = command_states::IN_TEXT;
                         cur_token.clear();
                         continue;
                     }
-                    if (cur_token == commands::redirect_error) {
-                        is_redirect = redirect_states::REDIRECT_ERROR;
+                    else if (cur_token == commands::append_output) {
+                        cmd.rd_mode = redirect_mode::APPEND_OUTPUT;
+                        cur_state = command_states::IN_TEXT;
+                        cur_token.clear();
+                        continue;
+                    }
+                    else if (cur_token == commands::redirect_error) {
+                        cmd.rd_mode = redirect_mode::REDIRECT_ERROR;
                         cur_state = command_states::IN_TEXT;
                         cur_token.clear();
                         continue;
@@ -87,7 +94,7 @@ const std::pair<std::vector<std::string>, redirect_states> parse_command(const s
                 if (c == '\"' && !to_escape) {
                     cur_state = command_states::IN_TEXT;
                 }
-                else if (c == '\\' && i < len - 1 && can_escape.count(cmd[i + 1]) && !to_escape) {
+                else if (c == '\\' && i < len - 1 && can_escape.count(cmd_string[i + 1]) && !to_escape) {
                     // can only escape specific characters  
                     to_escape = true;
                 }
@@ -104,26 +111,74 @@ const std::pair<std::vector<std::string>, redirect_states> parse_command(const s
     }
     if (!cur_token.empty()) parsed_cmd.push_back(cur_token);
 
-    return { parsed_cmd, is_redirect };
-}
-
-void handle_redirect(const std::string& filename, bool to_redirect, std::ostringstream& output) {
-    // open or create file in write mode and write output to file 
-    int fd = open(filename.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777);
-    std::string buf = output.str();
-    size_t NBYTES = buf.length();
-    if (to_redirect) {
-        if (NBYTES > 0) {
-            auto bytes = write(fd, buf.c_str(), NBYTES);
-            if (bytes == -1) {
-                std::cerr << "Error writing to file\n";
-                return;
-            }
-            // std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
+    if (!parsed_cmd.empty()) {
+        cmd.command = parsed_cmd[0];
+        cmd.args = std::vector(parsed_cmd.begin() + 1, parsed_cmd.end());
+        if (cmd.rd_mode != redirect_mode::NO_REDIRECT) {
+            cmd.redirect_filename = cmd.args.back();
+            cmd.args.pop_back();
         }
     }
-    else { 
-        std::cout << buf; 
+
+    return cmd;
+}
+
+void setup_fd(const Command& cmd) {
+    if (cmd.rd_mode == redirect_mode::NO_REDIRECT) return;
+    auto flags = O_CREAT | O_WRONLY;
+    int fd;
+    if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
+        dup2(fd, STDERR_FILENO);
+    }
+    else if (cmd.rd_mode == redirect_mode::REDIRECT_OUTPUT) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
+        dup2(fd, STDOUT_FILENO);
+    }
+    else if (cmd.rd_mode == redirect_mode::APPEND_OUTPUT) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
+        dup2(fd, STDOUT_FILENO);
+    }
+    close(fd);
+}
+
+void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std::ostringstream& error_stream) {
+    // open or create file in write mode and write output to file
+    if (cmd.rd_mode == redirect_mode::NO_REDIRECT) {
+        if (error_stream.str().length() > 0) {
+            std::cerr << error_stream.str();
+        }
+        else if (output_stream.str().length() > 0) {
+            std::cout << output_stream.str();
+        }
+        return;
+    }
+    auto flags = O_CREAT | O_WRONLY;
+    int fd;
+    if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
+    }
+    else if (cmd.rd_mode == redirect_mode::REDIRECT_OUTPUT) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
+    }
+    else if (cmd.rd_mode == redirect_mode::APPEND_OUTPUT) {
+        fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
+    }
+    std::string buf;
+    if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR) {
+        buf = error_stream.str();
+    }
+    else {
+        buf = output_stream.str();
+    }
+    auto NBYTES = buf.length();
+    if (NBYTES > 0) {
+        auto bytes = write(fd, buf.c_str(), NBYTES);
+        if (bytes == -1) {
+            std::cerr << "Error writing to file\n";
+            return;
+        }
+        std::cout << "Debugging: " << bytes << " bytes written to file" << std::endl;
     }
     close(fd);
 }
