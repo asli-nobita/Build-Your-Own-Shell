@@ -131,9 +131,7 @@ Command parse_command(const std::string& input) {
 
 void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std::ostringstream& error_stream) {
     // open or create file in write mode and write output to file
-    if (cmd.rd_mode == redirect_mode::NO_REDIRECT || 
-        ((cmd.rd_mode == redirect_mode::REDIRECT_OUTPUT || cmd.rd_mode == redirect_mode::APPEND_OUTPUT) && output_stream.str().empty()) ||
-        ((cmd.rd_mode == redirect_mode::REDIRECT_ERROR || cmd.rd_mode == redirect_mode::APPEND_ERROR) && error_stream.str().empty())) {
+    if (cmd.rd_mode == redirect_mode::NO_REDIRECT) {
             if(!error_stream.str().empty()) std::cerr << error_stream.str();
             if(!output_stream.str().empty()) std::cout << output_stream.str();
         return;
@@ -153,7 +151,15 @@ void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std:
         fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
     }
 
-    auto buf = output_stream.str().empty() ? error_stream.str() : output_stream.str(); 
+    std::string buf;
+    if(cmd.rd_mode == redirect_mode::APPEND_ERROR || cmd.rd_mode == redirect_mode::REDIRECT_ERROR) { 
+        buf = error_stream.str(); 
+        if(!output_stream.str().empty()) std::cout << output_stream.str(); 
+    } 
+    else { 
+        buf = output_stream.str(); 
+        if(!error_stream.str().empty()) std::cerr << error_stream.str();
+    }
     auto NBYTES = buf.length();
     if (NBYTES > 0) {
         auto bytes = write(fd, buf.c_str(), NBYTES);
