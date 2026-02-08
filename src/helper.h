@@ -65,7 +65,7 @@ struct Command {
 Command parse_command(const std::string& input);
 void trim(std::string& s);
 const std::string search_in_path(const std::string& PATH, const std::string& command);
-void setup_fd(const Command& cmd);
+// void setup_fd(const Command& cmd);
 void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std::ostringstream& error_stream);
 
 #endif

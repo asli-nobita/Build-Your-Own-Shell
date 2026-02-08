@@ -98,7 +98,25 @@ int main() {
                         parsed_args_ptrs.push_back(nullptr);
 
                         if (cmd.rd_mode != redirect_mode::NO_REDIRECT) {
-                            setup_fd(cmd);
+                            auto flags = O_CREAT | O_WRONLY;
+                            int fd;
+                            if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR) {
+                                fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
+                                dup2(fd, STDERR_FILENO);
+                            }
+                            else if (cmd.rd_mode == redirect_mode::APPEND_ERROR) {
+                                fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
+                                dup2(fd, STDERR_FILENO);
+                            }
+                            else if (cmd.rd_mode == redirect_mode::REDIRECT_OUTPUT) {
+                                fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
+                                dup2(fd, STDOUT_FILENO);
+                            }
+                            else if (cmd.rd_mode == redirect_mode::APPEND_OUTPUT) {
+                                fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
+                                dup2(fd, STDOUT_FILENO);
+                            }
+                            close(fd); 
                         }
 
                         execv(exe_path.c_str(), parsed_args_ptrs.data());
@@ -106,6 +124,8 @@ int main() {
                     else if (pid > 0) {
                         int status;
                         waitpid(pid, &status, 0);
+                        // child already wrote to the file, so we can disable redirect for parent 
+                        cmd.rd_mode = redirect_mode::NO_REDIRECT; 
                     }
                     else {
                         error_stream << "Fork failed: " << std::strerror(errno) << "\n";

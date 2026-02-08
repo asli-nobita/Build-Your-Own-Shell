@@ -129,29 +129,6 @@ Command parse_command(const std::string& input) {
     return cmd;
 }
 
-void setup_fd(const Command& cmd) {
-    if (cmd.rd_mode == redirect_mode::NO_REDIRECT) return;
-    auto flags = O_CREAT | O_WRONLY;
-    int fd;
-    if (cmd.rd_mode == redirect_mode::REDIRECT_ERROR) {
-        fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
-        dup2(fd, STDERR_FILENO);
-    }
-    else if (cmd.rd_mode == redirect_mode::APPEND_ERROR) {
-        fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
-        dup2(fd, STDERR_FILENO);
-    }
-    else if (cmd.rd_mode == redirect_mode::REDIRECT_OUTPUT) {
-        fd = open(cmd.redirect_filename.c_str(), flags | O_TRUNC, 0777);
-        dup2(fd, STDOUT_FILENO);
-    }
-    else if (cmd.rd_mode == redirect_mode::APPEND_OUTPUT) {
-        fd = open(cmd.redirect_filename.c_str(), flags | O_APPEND, 0777);
-        dup2(fd, STDOUT_FILENO);
-    }
-    close(fd);
-}
-
 void handle_redirect(const Command& cmd, std::ostringstream& output_stream, std::ostringstream& error_stream) {
     // open or create file in write mode and write output to file
     if (cmd.rd_mode == redirect_mode::NO_REDIRECT) {
